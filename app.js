@@ -6,6 +6,8 @@ const ejs = require("ejs");
 const mongoose = require('mongoose');
 
 
+const md5 = require('md5');
+const security = require('./utilities/security');
 const app = express();
 
 require('./models/user');
@@ -18,7 +20,7 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/userDB");
+mongoose.connect("mongodb://127.0.0.1/userDB");
 const userModel = mongoose.model('user');
 
 
@@ -36,7 +38,8 @@ app.route('/login')
             const password = req.body.password;
             
             const result = await userModel.findOne({email : email});
-            if(result != null && result.password === password){
+            //if(result != null && result.password === md5(password)){
+            if(result != null && await security.compare(password, result.password)){
                 res.render('secrets');
             } 
             else{
@@ -56,13 +59,21 @@ app.route('/register')
     )
     .post(async (req, res) =>{
         try{
+            
             const newEmail = req.body.username;
             const newPassword = req.body.password;
-            const newUser = new userModel({email: newEmail, password: newPassword});
+            const hash = await security.encrypt(newPassword);
+            //const newUser = new userModel({email: newEmail, password: newPassword});
+            // await userModel.create({
+            //     email: newEmail,
+            //     password: md5(newPassword)
+            // });
+
             await userModel.create({
                 email: newEmail,
-                password: newPassword
+                password: hash
             });
+
             res.redirect('/');
         }
         catch(err){
