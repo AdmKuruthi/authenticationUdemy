@@ -62,13 +62,13 @@ app.route('/register')
             
             const newEmail = req.body.username;
             const newPassword = req.body.password;
-            const hash = await security.encrypt(newPassword);
             //const newUser = new userModel({email: newEmail, password: newPassword});
             // await userModel.create({
             //     email: newEmail,
             //     password: md5(newPassword)
             // });
-
+            
+            const hash = await security.encrypt(newPassword);
             await userModel.create({
                 email: newEmail,
                 password: hash
