@@ -4,10 +4,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require('mongoose');
+const session = require('express-session');
+const passport = require('passport');
 
 
-const md5 = require('md5');
-const security = require('./utilities/security');
+//const md5 = require('md5');
+//const security = require('./utilities/security');
 const app = express();
 
 require('./models/user');
@@ -20,67 +22,25 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(express.static("public"));
 
+app.use(session({
+    secret: process.env.PASS_KEY,
+    resave: false,
+    saveUninitialized: false
+}));
+// Needs to be initialized right away
+app.use(passport.initialize());
+app.use(passport.session());
+
 mongoose.connect("mongodb://127.0.0.1/userDB");
 const userModel = mongoose.model('user');
+passport.use(userModel.createStrategy());
 
+passport.serializeUser(userModel.serializeUser());
+passport.deserializeUser(userModel.deserializeUser());
 
-app.get('/', (req, res) =>{
-    res.render('home');
-});
+const routes = require('./utilities/routes');
+app.use(routes);
 
-app.route('/login')
-    .get((req, res) =>{
-        res.render('login', {error: false});
-    })
-    .post(async (req, res) =>{
-        try{
-            const email = req.body.username;
-            const password = req.body.password;
-            
-            const result = await userModel.findOne({email : email});
-            //if(result != null && result.password === md5(password)){
-            if(result != null && await security.compare(password, result.password)){
-                res.render('secrets');
-            } 
-            else{
-                res.render('login', {error: true});
-            }
-        }
-        catch(err){
-            console.log(err);
-            res.send(err);
-        }
-    });
-
-app.route('/register')
-    .get((req, res) =>{
-        res.render('register');
-        }
-    )
-    .post(async (req, res) =>{
-        try{
-            
-            const newEmail = req.body.username;
-            const newPassword = req.body.password;
-            //const newUser = new userModel({email: newEmail, password: newPassword});
-            // await userModel.create({
-            //     email: newEmail,
-            //     password: md5(newPassword)
-            // });
-            
-            const hash = await security.encrypt(newPassword);
-            await userModel.create({
-                email: newEmail,
-                password: hash
-            });
-
-            res.redirect('/');
-        }
-        catch(err){
-            console.log(err);
-            res.send(err);
-        }
-    });
 
 app.listen(3000, function() {
   console.log("Server started on port 3000");
