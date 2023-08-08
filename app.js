@@ -6,6 +6,7 @@ const ejs = require("ejs");
 const mongoose = require('mongoose');
 const session = require('express-session');
 const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 
 //const md5 = require('md5');
@@ -35,8 +36,29 @@ mongoose.connect("mongodb://127.0.0.1/userDB");
 const userModel = mongoose.model('user');
 passport.use(userModel.createStrategy());
 
-passport.serializeUser(userModel.serializeUser());
-passport.deserializeUser(userModel.deserializeUser());
+passport.serializeUser((user, done) => {
+  done(null, user.id)
+});
+passport.deserializeUser((id,done) => {
+  userModel.findById(id)
+    .then((user) => {
+      done(null, user);
+    });
+});
+
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/secrets",
+    userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    userModel.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
 
 const routes = require('./utilities/routes');
 app.use(routes);

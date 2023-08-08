@@ -55,12 +55,26 @@ router.route('/register')
         }
     });
 
-
-
+router.route('/submit')
+    .get((req,res) => {
+        req.isAuthenticated() ? res.render('submit') : res.render('login', {error: true});
+    })
+    .post(async (req,res) => {
+        const newSecret = req.body.secret;
+        const secretRegistered = await service.registerSecret(newSecret, req.user._id);
+        secretRegistered === true ? res.redirect('/') : res.send('User was not registered. Check error log');
+    });
 router.route('/secrets')
     .get((req,res) => { // Check if session is alive
-        req.isAuthenticated() ? res.render('secrets') : res.render('/login');
+        req.isAuthenticated() ? res.render('secrets') : res.render('login', {error: true});
     });
 
+router.route('/auth/google')
+    .get(passport.authenticate('google', { scope: ['profile', 'email']}));
+
+router.route('/auth/google/secrets')
+    .get(passport.authenticate('google', {failureRedirect: '/login'}), (req, res) => {
+        res.redirect('/secrets');
+    });
 
 module.exports = router;

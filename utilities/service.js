@@ -38,4 +38,16 @@ const registerUser = (username, password) => {
     });
 }
 
-module.exports = {registerUser}
+
+const registerSecret = async (secret, userId) => {
+    const user = await userModel.findById(userId);
+    if(user != null || user != undefined){
+        user.secret = secret;
+        const savedUser = await user.save();
+        let result = savedUser === user;
+        return result;
+    } else{
+        console.log(error);
+    }
+}
+module.exports = {registerUser, registerSecret}
