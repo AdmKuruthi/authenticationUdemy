@@ -65,9 +65,17 @@ router.route('/submit')
         secretRegistered === true ? res.redirect('/') : res.send('User was not registered. Check error log');
     });
 router.route('/secrets')
-    .get((req,res) => { // Check if session is alive
-        req.isAuthenticated() ? res.render('secrets') : res.render('login', {error: true});
-    });
+    .get(// Check if session is alive
+        async (req, res) => {
+            if(req.isAuthenticated()){
+                const users =  await service.getUsers();
+                res.render('secrets', {usersWithSecrets: users})
+            } 
+            else {
+                res.render('login', {error: true});
+            }
+        }
+    );
 
 router.route('/auth/google')
     .get(passport.authenticate('google', { scope: ['profile', 'email']}));

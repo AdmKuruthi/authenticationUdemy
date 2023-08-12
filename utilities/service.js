@@ -50,4 +50,13 @@ const registerSecret = async (secret, userId) => {
         console.log(error);
     }
 }
-module.exports = {registerUser, registerSecret}
+
+const getUsers = async() => {
+    const users = await userModel.find({secret : {$ne: null}});
+    return users;
+    //if(users != null && users != undefined && users.length > 0)
+    //    return users;
+    //else
+    //    return null;
+}
+module.exports = {registerUser, registerSecret, getUsers}
